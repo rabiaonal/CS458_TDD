@@ -24,9 +24,15 @@
 
             //coord -> [float, float]
             //returns float
-            function getEarthCenterDistance(coord)
+            function getEarthCenterDistance(x, z)
             {
-                return null;
+                const a = 12742; //km
+                const b = 12713; //km
+
+                var exp1 = a^4 * (Math.cos(x))^2 + b^4 * (Math.sin(x))^2;
+                var exp2 = a^2 * (Math.cos(x))^2 + b^2 * (Math.sin(x))^2;
+                var exp3 = 2 * z * Math.sqrt(exp2);
+                return exp1 / exp2 + exp3 + z^2;
             }
 
             //text -> xxx.xxx, yyy.yyy
