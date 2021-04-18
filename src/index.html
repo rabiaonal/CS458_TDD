@@ -1,78 +1,157 @@
 <html>
-<body>
-<script>
-    function isPositive(x){
-        if(x>0) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    function inCity(){
+    <body>
+        <script>
+            function isPositive(x)
+            {
+                if(x>0) 
+                {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
 
-    }
-    function isValidInput(){
+            function inCity()
+            {
 
-    }
-    function getCity(){
+            }
 
-    }
-    function getDeviceCoordinates(){
+            function isValidInput()
+            {
 
-    }
-    function  getNearestCityCenterDistance(){
+            }
 
-    }
-    function getEarthCenterDistance(){
+            function getCity(coord)
+            {
+                
+            }
 
-    }
-    function parseCoord(){
+            function getDeviceCoordinates()
+            {
 
-    }
-</script>
-<script name="unitTests">
-    function testIsPositive() {
-        var test = isPositive(5) === true;
-        test = test && isPositive(-3) === false;
-        test = test && isPositive(0) === false;
-        console.log(test);
-    }
-    function testInCity(){
+            }
 
-    }
-    function testIsValidInput(){
+            function  getNearestCityCenterDistance()
+            {
 
-    }
-    function testGetCity(){
+            }
 
-    }
-    function testGetDeviceCoordinates(){
+            function getEarthCenterDistance()
+            {
 
-    }
-    function testGetNearestCityCenterDistance(){
+            }
 
-    }
-    function testGetEarthCenterDistance(){
+            //text -> xxx.xxx,yyy.yyy 
+            //constraints -> -90 <= x <= 90 and -180 <= y <= 180
+            function parseCoord(text)
+            {
+                //let coords = text.split(",");
+                //let xCoord = parseFloat(coords[1].trim());
+                //let yCoord = parseFloat(coords[2].trim());
+                return [null, null];
+            }
+        </script>
+        <script name="unitTests">
+            
+            function testIsPositive() 
+            {
+                var test = isPositive(5) === true;
+                test = test && isPositive(-3) === false;
+                test = test && isPositive(0) === false;
+                console.log(test);
+            }
 
-    }
-    function testParseCoord(){
+            function testInCity()
+            {
 
-    }
+            }
 
-    function unitTest(){
-        testIsPositive();
-        testInCity();
-        testIsValidInput();
-        testGetCity();
-        testGetDeviceCoordinates();
-        testGetNearestCityCenterDistance();
-        testGetEarthCenterDistance();
-        testParseCoord();
-    }
-    unitTest();
-</script>
+            function testIsValidInput()
+            {
 
-</body>
+            }
+
+            function testGetCity()
+            {
+
+            }
+
+            function testGetDeviceCoordinates()
+            {
+
+            }
+
+            function testGetNearestCityCenterDistance()
+            {
+
+            }
+
+            function testGetEarthCenterDistance(){
+
+            }
+
+            function testParseCoord()
+            {
+                
+                let invalidInputs = ["xxx.xxx, yyy.yyy", "32,64 24,72", "91.342, 24.728", "32.647, 181.657"];
+                let validInputs = ["32.64, 24.72", " 32.64 , 24.72 ", "-32.647, -24.728"];
+                
+                
+                invalidInputs.forEach(input => 
+                {
+                    let coords = parseCoord(input);
+                    console.assert(coords[0] != null && coords[1] != null,
+                    {
+                        input: input,
+                        xCoord: coords[0], 
+                        yCoord: coords[1], 
+                        error: "Invalid input parsing: coords cannot be null"
+                    });
+                    console.assert(isNaN(coords[0]) && isNaN(coords[1]), 
+                    {
+                        input: input,
+                        xCoord: coords[0], 
+                        yCoord: coords[1], 
+                        error: "Invalid input parsing: x = NaN, y = NaN"
+                    });
+                });
+                
+                validInputs.forEach(input => 
+                {
+                    let coords = parseCoord(input);
+                    console.assert(coords[0] != null && coords[1] != null,
+                    {
+                        input: input,
+                        xCoord: coords[0], 
+                        yCoord: coords[1], 
+                        error: "Valid input parsing: coords cannot be null"
+                    });
+                    console.assert(coords[0] >= -90.0 && coords[0] <= 90.0 && coords[1] >= -180.0 && coords[1] <= 180.0, 
+                    {
+                        input: input,
+                        xCoord: coords[0], 
+                        yCoord: coords[1], 
+                        error: "Valid input parsing: -90.0 <= x <= 90.0, -180.0 <= y <= 180.0"
+                    });
+                });
+            }
+
+            function unitTest()
+            {
+                testIsPositive();
+                testInCity();
+                testIsValidInput();
+                testGetCity();
+                testGetDeviceCoordinates();
+                testGetNearestCityCenterDistance();
+                testGetEarthCenterDistance();
+                testParseCoord();
+            }
+            //unitTest();
+            testParseCoord();
+        </script>
+
+    </body>
 
 </html>
