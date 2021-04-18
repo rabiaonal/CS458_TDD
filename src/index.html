@@ -39,15 +39,17 @@
                 //let yCoord = parseFloat(coords[2].trim());
                 return [null, null];
             }
+
         </script>
         <script name="unitTests">
 
-            const invalidInputs = ["xxx.xxx, yyy.yyy", "32,64 24,72", "91.342, 24.728", "32.647, 181.657"];
-            const validInputs = ["32.64, 24.72", " 32.64 , 24.72 ", "-32.647, -24.728"];
+            const invalidInputs = ["", "xxx.xxx, yyy.yyy", "32,64 24,72", "91.342, 24.728", "32.647, 181.657", "32.6s47, 181.657ds", "39.942, 32.640,"
+                                            , "39.942, 32.640.", "39.942, 32.640, 25.478"];
+            const validInputs = ["32.64, 24.72", " 32.64 , 24.72 ", "-32.647, -24.728", "39.942,32.640"];
 
             const inCityCoords =  
             [ 
-                ["Ankara", 39.942, 32.640], 
+                ["Ankara", 39.942, 32.643], //rakım, şehir merkezine uzaklık, distancetoEC eklenecek
                 ["İstanbul", 41.039, 28.978], 
                 ["İzmir", 38.414, 27.149], 
                 ["Adana", 37.026, 35.359], 
@@ -57,6 +59,7 @@
                 ["Moscow", 55.760, 37.628], 
                 ["Hong Kong", 22.287, 114.167], 
                 [ "Sydney", -33.869, 151.214]
+                //Aynı şehirde farklı noktalar eklenebilir
             ];
 
             const outCityCoords = 
