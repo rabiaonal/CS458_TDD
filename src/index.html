@@ -1,50 +1,37 @@
 <html>
     <body>
         <script>
-            function isPositive(x)
-            {
-                if(x>0) 
-                {
-                    return true;
-                }
-                else 
-                {
-                    return false;
-                }
-            }
 
-            function inCity()
-            {
-                //TODO
-            }
-
-            function isValidInput()
-            {
-                //TODO
-            }
-
+            //coord -> [float, float]
+            //returns City
             function getCity(coord)
             {
-                //TODO
+                return null;
             }
 
+            //returns [float, float]
             function getDeviceCoordinates()
             {
-                //TODO
+                return  [null, null];
             }
 
-            function  getNearestCityCenterDistance()
+            //coord -> [float, float]
+            //returns float
+            function  getNearestCityCenterDistance(coord)
             {
-                //TODO
+                return null;
             }
 
-            function getEarthCenterDistance()
+            //coord -> [float, float]
+            //returns float
+            function getEarthCenterDistance(coord)
             {
-                //TODO
+                return null;
             }
 
-            //text -> xxx.xxx,yyy.yyy 
+            //text -> xxx.xxx, yyy.yyy
             //constraints -> -90 <= x <= 90 and -180 <= y <= 180
+            //returns [float, float]
             function parseCoord(text)
             {
                 //let coords = text.split(",");
@@ -55,75 +42,162 @@
         </script>
         <script name="unitTests">
 
-            function testIsPositive() 
-            {
-                var test = isPositive(5) === true;
-                test = test && isPositive(-3) === false;
-                test = test && isPositive(0) === false;
+            const invalidInputs = ["xxx.xxx, yyy.yyy", "32,64 24,72", "91.342, 24.728", "32.647, 181.657"];
+            const validInputs = ["32.64, 24.72", " 32.64 , 24.72 ", "-32.647, -24.728"];
 
-                test ? console.log("isPositive test passed") : console.log("isPositive test failed");
-            }
+            const inCityCoords =  
+            [ 
+                ["Ankara", 39.942, 32.640], 
+                ["İstanbul", 41.039, 28.978], 
+                ["İzmir", 38.414, 27.149], 
+                ["Adana", 37.026, 35.359], 
+                ["New York", 40.695, -73.995], 
+                ["London", 51.517, -0.136], 
+                ["Berlin", 52.519, 13.409], 
+                ["Moscow", 55.760, 37.628], 
+                ["Hong Kong", 22.287, 114.167], 
+                [ "Sydney", -33.869, 151.214]
+            ];
 
-            function testInCity()
-            {
-                var test = inCity(39.942056, 32.640992) === true;
-                test = test && inCity(41.025625, 28.974229) === true;
-                test = test && inCity(51.477452, -3.178942) === true;
-                test = test && inCity(37.592091, -33.984785) === false;
-
-                test ? console.log("inCity test passed") : console.log("inCity test failed");
-            }
-
-            function testIsValidInput()
-            {
-                var test = isValidInput(0,0) === true;
-                test = test && isValidInput("A", 34.456099) === false;
-                test = test && isValidInput(-1, -1) === true;
-                test = test && isValidInput("39.942056", "32.640992") === false;
-
-                test ? console.log("isValidInput test passed") : console.log("isValidInput test failed");
-            }
+            const outCityCoords = 
+            [
+                ["North Atlantic Ocean", 33.953, -40.783],
+                ["North Pasific Ocean", 30.102, -171.692], 
+                ["Sahara Desert", 22.794, 14.988],
+                ["Greenland", 65.874, -46.301], 
+                ["Mount Everest", 27.988, 86.922], 
+            ];
 
             function testGetCity()
             {
-                var test = getCity(39.942056, 32.640992) === "ANKARA";
-                test = test && getCity(0, 0) === "";
+                inCityCoords.forEach(coord => 
+                {
+                    let city = getCity([coord[1], coord[2]]);
+                    console.assert(city != null,
+                    {
+                        coord: coord.toString(),
+                        city: city,
+                        error: "InCityCoords getCity(): city cannot be null"
+                    });
+                    console.assert(city === coord[0],
+                    {
+                        coord: coord.toString(),
+                        city: city,
+                        error: "InCityCoords getCity(): uncorrect city"
+                    });
+                });
 
-                test ? console.log("getCity test passed") : console.log("getCity test failed");
+                outCityCoords.forEach(coord => 
+                {
+                    let city = getCity([coord[1], coord[2]]);
+                    console.assert(city != null,
+                    {
+                        coord: coord.toString(),
+                        city: city,
+                        error: "OutCityCoords getCity(): city cannot be null"
+                    });
+                    console.assert(city === coord[0],
+                    {
+                        coord: coord.toString(),
+                        city: city,
+                        error: "OutCityCoords getCity(): uncorrect city"
+                    });
+                });
             }
 
             function testGetDeviceCoordinates()
             {
-
+                let coords = getDeviceCoordinates();
+                console.assert(coords[0] != null && coords[1] != null,
+                {
+                    xCoord: coords[0], 
+                    yCoord: coords[1], 
+                    error: "getDeviceCoordinates(): coords cannot be null"
+                });
+                console.assert(coords[0] >= -90.0 && coords[0] <= 90.0 && coords[1] >= -180.0 && coords[1] <= 180.0, 
+                {
+                    xCoord: coords[0], 
+                    yCoord: coords[1], 
+                    error: "getDeviceCoordinates(): -90.0 <= x <= 90.0, -180.0 <= y <= 180.0"
+                });
             }
 
             function testGetNearestCityCenterDistance()
             {
-
-                function between(x, min, max) 
+                inCityCoords.forEach(coord => 
                 {
-                    return x >= min && x <= max;
-                }
+                    let distance = getNearestCityCenterDistance([coord[1], coord[2]]);
+                    console.assert(distance != null,
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "InCityCoords getNearestCityCenterDistance(): distance cannot be null"
+                    });
+                    console.assert(distance === coord[0],
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "InCityCoords getNearestCityCenterDistance(): uncorrect distance"
+                    });
+                });
 
-                var test = between(inCity(39.942056, 32.640992), 21, 22);
-                test = test && between(inCity(41.025625, 28.974229), 4.1, 4.3);
-                test = test && between(inCity(51.477452, -3.178942), 2.5, 2.7);
-                test = test && between(inCity(40.874152, 29.128495), 30.4,30.5);
-
-                test ? console.log("getNearestCityCenterDistance test passed") : console.log("getNearestCityCenterDistance test failed");
+                outCityCoords.forEach(coord => 
+                {
+                    let distance = getNearestCityCenterDistance([coord[1], coord[2]]);
+                    console.assert(distance != null,
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "OutCityCoords getNearestCityCenterDistance(): distance cannot be null"
+                    });
+                    console.assert(distance != coord[0],
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "OutCityCoords getNearestCityCenterDistance(): uncorrect distance"
+                    });
+                });
             }
 
             function testGetEarthCenterDistance()
             {
+                inCityCoords.forEach(coord => 
+                {
+                    let distance = getEarthCenterDistance([coord[1], coord[2]]);
+                    console.assert(distance != null,
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "InCityCoords getEarthCenterDistance(): distance cannot be null"
+                    });
+                    console.assert(distance === coord[0],
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "InCityCoords getEarthCenterDistance(): uncorrect distance"
+                    });
+                });
 
+                outCityCoords.forEach(coord => 
+                {
+                    let distance = getEarthCenterDistance([coord[1], coord[2]]);
+                    console.assert(distance != null,
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "OutCityCoords getEarthCenterDistance(): distance cannot be null"
+                    });
+                    console.assert(distance != coord[0],
+                    {
+                        coord: coord.toString(),
+                        distance: distance,
+                        error: "OutCityCoords getEarthCenterDistance(): uncorrect distance"
+                    });
+                });
             }
 
             function testParseCoord()
-            {
-                
-                let invalidInputs = ["xxx.xxx, yyy.yyy", "32,64 24,72", "91.342, 24.728", "32.647, 181.657"];
-                let validInputs = ["32.64, 24.72", " 32.64 , 24.72 ", "-32.647, -24.728"];
-                
+            {   
                 invalidInputs.forEach(input => 
                 {
                     let coords = parseCoord(input);
@@ -165,16 +239,15 @@
 
             function unitTest()
             {
-                testIsPositive();
-                testInCity();
-                testIsValidInput();
-                testGetCity();
+                testParseCoord();
                 testGetDeviceCoordinates();
+                testGetCity();
                 testGetNearestCityCenterDistance();
                 testGetEarthCenterDistance();
-                testParseCoord();
             }
+
             unitTest();
+
         </script>
     </body>
 </html>
