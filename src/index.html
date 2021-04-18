@@ -1,51 +1,83 @@
 <html>
+    <head>
+        <style type="text/css">
+            /* Always set the map height explicitly to define the size of the div
+             * element that contains the map. */
+            #map { height: 100%; }
+
+            /* Optional: Makes the sample page fill the window. */
+            html, body { height: 100%; margin: 0; padding: 0; }
+        </style>
+        <script>
+        let map;
+    
+        function initMap() 
+        {
+            map = new google.maps.Map(document.getElementById("map"), 
+            {
+                center: { lat: 39.942, lng: 32.643 },
+                zoom: 10,
+            });
+        }
+
+        </script>
+    </head>
     <body>
+        <div id="CoordinateInput">
+            <form action="javascript:void(0);" onsubmit="getCity()">
+                <label for="xCoord">Latitude: </label>
+                <input class="coordInput" type="number" name="xCoord" pattern="[0-9]+([.,][0-9]+)?" required min="-90.0" max="90.0"><br>
+                <label for="yCoord">Longitude: </label>
+                <input class="coordInput" type="number" name="yCoord" pattern="[0-9]+([.,][0-9]+)?" required min="-180.0" max="180.0"><br>
+                <button type="submit">OK</button>
+            </form>
+        </div>
+        <div id="map"></div>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAjZAFTWtoDNnapPo5LNv4ziRS8WjKPQM&callback=initMap&libraries=&v=weekly" async></script>
         <script>
 
             //coord -> [float, float]
             //returns City
             function getCity(coord)
             {
-                return null;
+                return "";
             }
 
-            //returns [float, float]
+            //returns Promise<[float, float]>
             function getDeviceCoordinates()
             {
-                return  [null, null];
+                return new Promise((resolve, reject) => 
+                {
+                    navigator.geolocation.getCurrentPosition((location) => 
+                    {
+                        resolve([location.coords.latitude, location.coords.longitude]);
+                    }, 
+                    (error) =>
+                    {
+                        if (error.code == 1) alert("Allow to access your position.");
+                        else alert("Unfortunately, your position could not be determined.");
+                        reject([NaN, NaN]);
+                    });
+                });
             }
 
             //coord -> [float, float]
             //returns float
             function  getNearestCityCenterDistance(coord)
             {
-                return null;
+                return NaN;
             }
 
             //coord -> [float, float]
             //returns float
             function getEarthCenterDistance(coord)
             {
-                return null;
-            }
-
-            //text -> xxx.xxx, yyy.yyy
-            //constraints -> -90 <= x <= 90 and -180 <= y <= 180
-            //returns [float, float]
-            function parseCoord(text)
-            {
-                //let coords = text.split(",");
-                //let xCoord = parseFloat(coords[1].trim());
-                //let yCoord = parseFloat(coords[2].trim());
-                return [null, null];
+                
+                return NaN;
             }
 
         </script>
         <script name="unitTests">
-
-            const invalidInputs = ["", "xxx.xxx, yyy.yyy", "32,64 24,72", "91.342, 24.728", "32.647, 181.657", "32.6s47, 181.657ds", "39.942, 32.640,"
-                                            , "39.942, 32.640.", "39.942, 32.640, 25.478"];
-            const validInputs = ["32.64, 24.72", " 32.64 , 24.72 ", "-32.647, -24.728", "39.942,32.640"];
 
             const inCityCoords =  
             [ 
@@ -76,12 +108,6 @@
                 inCityCoords.forEach(coord => 
                 {
                     let city = getCity([coord[1], coord[2]]);
-                    console.assert(city != null,
-                    {
-                        coord: coord.toString(),
-                        city: city,
-                        error: "InCityCoords getCity(): city cannot be null"
-                    });
                     console.assert(city === coord[0],
                     {
                         coord: coord.toString(),
@@ -93,12 +119,6 @@
                 outCityCoords.forEach(coord => 
                 {
                     let city = getCity([coord[1], coord[2]]);
-                    console.assert(city != null,
-                    {
-                        coord: coord.toString(),
-                        city: city,
-                        error: "OutCityCoords getCity(): city cannot be null"
-                    });
                     console.assert(city === coord[0],
                     {
                         coord: coord.toString(),
@@ -110,19 +130,16 @@
 
             function testGetDeviceCoordinates()
             {
-                let coords = getDeviceCoordinates();
-                console.assert(coords[0] != null && coords[1] != null,
+                function assert(coords) 
                 {
-                    xCoord: coords[0], 
-                    yCoord: coords[1], 
-                    error: "getDeviceCoordinates(): coords cannot be null"
-                });
-                console.assert(coords[0] >= -90.0 && coords[0] <= 90.0 && coords[1] >= -180.0 && coords[1] <= 180.0, 
-                {
-                    xCoord: coords[0], 
-                    yCoord: coords[1], 
-                    error: "getDeviceCoordinates(): -90.0 <= x <= 90.0, -180.0 <= y <= 180.0"
-                });
+                    console.assert(coords[0] >= -90.0 && coords[0] <= 90.0 && coords[1] >= -180.0 && coords[1] <= 180.0, 
+                    {
+                        xCoord: coords[0], 
+                        yCoord: coords[1], 
+                        error: "getDeviceCoordinates(): -90.0 <= x <= 90.0, -180.0 <= y <= 180.0"
+                    });
+                }
+                getDeviceCoordinates().then((coords) => { assert(coords); }).catch((coords) => { assert(coords); });
             }
 
             function testGetNearestCityCenterDistance()
@@ -130,12 +147,6 @@
                 inCityCoords.forEach(coord => 
                 {
                     let distance = getNearestCityCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance != null,
-                    {
-                        coord: coord.toString(),
-                        distance: distance,
-                        error: "InCityCoords getNearestCityCenterDistance(): distance cannot be null"
-                    });
                     console.assert(distance === coord[0],
                     {
                         coord: coord.toString(),
@@ -147,12 +158,6 @@
                 outCityCoords.forEach(coord => 
                 {
                     let distance = getNearestCityCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance != null,
-                    {
-                        coord: coord.toString(),
-                        distance: distance,
-                        error: "OutCityCoords getNearestCityCenterDistance(): distance cannot be null"
-                    });
                     console.assert(distance != coord[0],
                     {
                         coord: coord.toString(),
@@ -167,12 +172,6 @@
                 inCityCoords.forEach(coord => 
                 {
                     let distance = getEarthCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance != null,
-                    {
-                        coord: coord.toString(),
-                        distance: distance,
-                        error: "InCityCoords getEarthCenterDistance(): distance cannot be null"
-                    });
                     console.assert(distance === coord[0],
                     {
                         coord: coord.toString(),
@@ -184,12 +183,6 @@
                 outCityCoords.forEach(coord => 
                 {
                     let distance = getEarthCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance != null,
-                    {
-                        coord: coord.toString(),
-                        distance: distance,
-                        error: "OutCityCoords getEarthCenterDistance(): distance cannot be null"
-                    });
                     console.assert(distance != coord[0],
                     {
                         coord: coord.toString(),
@@ -199,50 +192,8 @@
                 });
             }
 
-            function testParseCoord()
-            {   
-                invalidInputs.forEach(input => 
-                {
-                    let coords = parseCoord(input);
-                    console.assert(coords[0] != null && coords[1] != null,
-                    {
-                        input: input,
-                        xCoord: coords[0], 
-                        yCoord: coords[1], 
-                        error: "Invalid input parsing: coords cannot be null"
-                    });
-                    console.assert(isNaN(coords[0]) && isNaN(coords[1]), 
-                    {
-                        input: input,
-                        xCoord: coords[0], 
-                        yCoord: coords[1], 
-                        error: "Invalid input parsing: x = NaN, y = NaN"
-                    });
-                });
-                
-                validInputs.forEach(input => 
-                {
-                    let coords = parseCoord(input);
-                    console.assert(coords[0] != null && coords[1] != null,
-                    {
-                        input: input,
-                        xCoord: coords[0], 
-                        yCoord: coords[1], 
-                        error: "Valid input parsing: coords cannot be null"
-                    });
-                    console.assert(coords[0] >= -90.0 && coords[0] <= 90.0 && coords[1] >= -180.0 && coords[1] <= 180.0, 
-                    {
-                        input: input,
-                        xCoord: coords[0], 
-                        yCoord: coords[1], 
-                        error: "Valid input parsing: -90.0 <= x <= 90.0, -180.0 <= y <= 180.0"
-                    });
-                });
-            }
-
             function unitTest()
             {
-                testParseCoord();
                 testGetDeviceCoordinates();
                 testGetCity();
                 testGetNearestCityCenterDistance();
