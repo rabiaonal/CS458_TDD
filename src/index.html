@@ -9,16 +9,20 @@
             html, body { height: 100%; margin: 0; padding: 0; }
         </style>
         <script>
-        let map;
-    
-        function initMap() 
-        {
-            map = new google.maps.Map(document.getElementById("map"), 
+
+            let map;
+            let geocoder;
+        
+            function initPage() 
             {
-                center: { lat: 39.942, lng: 32.643 },
-                zoom: 10,
-            });
-        }
+                map = new google.maps.Map(document.getElementById("map"), 
+                {
+                    center: { lat: 39.942, lng: 32.643 },
+                    zoom: 10,
+                });
+                geocoder = new google.maps.Geocoder();
+                unitTest();
+            }
 
         </script>
     </head>
@@ -33,14 +37,47 @@
             </form>
         </div>
         <div id="map"></div>
-        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAjZAFTWtoDNnapPo5LNv4ziRS8WjKPQM&callback=initMap&libraries=&v=weekly" async></script>
+        <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAjZAFTWtoDNnapPo5LNv4ziRS8WjKPQM&callback=initPage&libraries=&v=weekly"></script>
         <script>
 
             //coord -> [float, float]
             //returns City
-            function getCity(coord)
+            function getCity(coords)
             {
-                return "";
+                const latlng = 
+                {
+                    lat: coords[0],
+                    lng: coords[1],
+                };
+                   
+                let cityPromise = new Promise((resolve, reject) =>
+                {
+                    geocoder.geocode( {location : latlng}, (results, status) => 
+                    {
+                        if(status === 'OK') 
+                        {
+                            map.setCenter(results[0].geometry.location);
+                            for(i = 0; i < results[0].address_components.length; i++){
+                                if(results[0].address_components[i].types.includes("administrative_area_level_1"))
+                                {
+                                    var marker = new google.maps.Marker( {
+                                        map: map, position: results[0].geometry.location });
+                                    resolve(results[0].address_components[i].long_name);
+                                    return;
+                                }
+                            }
+                            var marker = new google.maps.Marker( {
+                                map: map, position: results[0].geometry.location });
+                            resolve("None");
+                        } 
+                        else 
+                        {
+                            alert('Geocode failed: ' + status);
+                            reject('Failed');
+                        }
+                    });
+                });
+                return cityPromise;
             }
 
             //returns Promise<[float, float]>
@@ -70,10 +107,15 @@
 
             //coord -> [float, float]
             //returns float
-            function getEarthCenterDistance(coord)
+            function getEarthCenterDistance(x, z)
             {
-                
-                return NaN;
+                const a = 12742; //km
+                const b = 12713; //km
+
+                var exp1 = a^4 * (Math.cos(x))^2 + b^4 * (Math.sin(x))^2;
+                var exp2 = a^2 * (Math.cos(x))^2 + b^2 * (Math.sin(x))^2;
+                var exp3 = 2 * z * Math.sqrt(exp2);
+                return exp1 / exp2 + exp3 + z^2;
             }
 
         </script>
@@ -107,24 +149,28 @@
             {
                 inCityCoords.forEach(coord => 
                 {
-                    let city = getCity([coord[1], coord[2]]);
-                    console.assert(city === coord[0],
+                    getCity([coord[1], coord[2]]).then((city) => 
                     {
-                        coord: coord.toString(),
-                        city: city,
-                        error: "InCityCoords getCity(): uncorrect city"
-                    });
+                        console.assert(city === coord[0],
+                        {
+                            coord: coord.toString(),
+                            city: city,
+                            error: "InCityCoords getCity(): uncorrect city"
+                        });
+                    }); 
                 });
 
                 outCityCoords.forEach(coord => 
                 {
-                    let city = getCity([coord[1], coord[2]]);
-                    console.assert(city === coord[0],
+                    getCity([coord[1], coord[2]]).then((city) => 
                     {
-                        coord: coord.toString(),
-                        city: city,
-                        error: "OutCityCoords getCity(): uncorrect city"
-                    });
+                        console.assert(city === coord[0],
+                        {
+                            coord: coord.toString(),
+                            city: city,
+                            error: "OutCityCoords getCity(): uncorrect city"
+                        });
+                    }); 
                 });
             }
 
@@ -199,8 +245,6 @@
                 testGetNearestCityCenterDistance();
                 testGetEarthCenterDistance();
             }
-
-            unitTest();
 
         </script>
     </body>
