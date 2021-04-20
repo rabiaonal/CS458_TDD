@@ -12,11 +12,11 @@
             async function calculate(){
                 var x = parseFloat(document.getElementById("xCoordIn").value);
                 var y = parseFloat(document.getElementById("yCoordIn").value);
-                getCity(x, y).then(city => {
+                getCity([x, y]).then(city => {
                     document.getElementById("city").innerText = "You are in " + city + ".";
                     getNearestCityCenterDistance([x, y], city).then( d => {
                         document.getElementById("distanceToCity").innerText = "You are " + (d/1000).toFixed(2) + " km away from the city center.";
-                        getEarthCenterDistance(x,0).then( distance => {
+                        getEarthCenterDistance(x,y).then( distance => {
                             document.getElementById("distanceToEarth").innerText = "You are " + distance + " km away from the center of the earth.";
                         });
                     });
@@ -28,18 +28,18 @@
             //returns City
             async function getCity(coords)
             {
-                const latlng = 
+                const latlng =
                 {
                     lat: coords[0],
                     lng: coords[1],
                 };
-                   
+
                 return await new Promise((resolve, reject) =>
                 {
-                    geocoder.geocode({ location : latlng }, (results, status) => 
+                    geocoder.geocode({ location : latlng }, (results, status) =>
                     {
                         console.log(latlng);
-                        if(status === 'OK') 
+                        if(status === 'OK')
                         {
                             console.log(results[0]);
                             map.setCenter(results[0].geometry.location);
@@ -50,12 +50,12 @@
                                     resolve(results[0].address_components[i].long_name);
                                     return;
                                 }
-                                else if(results[0].address_components[i].types.includes("locality")) 
+                                else if(results[0].address_components[i].types.includes("locality"))
                                 {
                                     resolve(results[0].address_components[i].long_name);
                                     return;
                                 }
-                                else if(results[0].address_components[i].types.includes("postal_town")) 
+                                else if(results[0].address_components[i].types.includes("postal_town"))
                                 {
                                     resolve(results[0].address_components[i].long_name);
                                     return;
@@ -63,8 +63,8 @@
                             }
                             //var marker = new google.maps.Marker( {//map: map, position: results[0].geometry.location });
                             resolve("None");
-                        } 
-                        else 
+                        }
+                        else
                         {
                             console.log('Geocode failed: ' + status);
                             reject('Failed');
@@ -123,19 +123,52 @@
                 });
             }
 
+
             //coord -> [float, float]
             //returns float
-            async function getEarthCenterDistance(x, z)
-            {
-                //z şu an 0 veriliyor aslında apidan alınacak
-                const a = 6378; //km
-                const b = 6356; //km
-                const xRad = x * Math.PI / 180;
+            async function getEarthCenterDistance(x, y) {
 
-                var exp1 = Math.pow(a,4) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 4) * Math.pow(Math.sin(xRad), 2);
-                var exp2 = Math.pow(a,2) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 2) * Math.pow(Math.sin(xRad), 2);
-                var exp3 = 2 * z * Math.sqrt(exp2);
-                return Math.sqrt(exp1 / exp2 + exp3 + Math.pow(z,2)).toFixed(2);
+                const latlng =
+                    {
+                        lat: parseFloat(x),
+                        lng: parseFloat(y),
+                    };
+                return await new Promise((resolve, reject) =>
+                {
+                    let elevationService = new google.maps.ElevationService();
+                    elevationService.getElevationForLocations(
+                        {
+                            locations: [latlng],
+                        },
+                        (results, status) => {
+                            if (status === "OK" && results) {
+                                // Retrieve the first result
+                                if (results[0]) {
+                                    const a = 12742; //km
+                                    const b = 12713; //km
+                                    const xRad = x * Math.PI / 180;
+                                    const z = results[0].elevation;
+                                    console.log(results[0].elevation); //For debugging
+
+                                    var exp1 = Math.pow(a,4) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 4) * Math.pow(Math.sin(xRad), 2);
+                                    var exp2 = Math.pow(a,2) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 2) * Math.pow(Math.sin(xRad), 2);
+                                    var exp3 = 2 * z * Math.sqrt(exp2);
+
+                                    console.log(Math.sqrt(exp1 / exp2 + exp3 + Math.pow(z,2)).toFixed(2));
+                                    resolve(Math.sqrt(exp1 / exp2 + exp3 + Math.pow(z,2)).toFixed(2));
+                                    return;
+
+                                } else {
+                                    infowindow.setContent("No results found");
+                                    reject("No results found");
+                                }
+                            } else {
+                                infowindow.setContent("Elevation service failed due to: " + status);
+                                reject("Elevation service failed due to: " + status);
+                            }
+                        }
+                    );
+                });
             }
 
         </script>
