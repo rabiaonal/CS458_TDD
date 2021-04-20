@@ -38,30 +38,36 @@
                 {
                     geocoder.geocode({ location : latlng }, (results, status) =>
                     {
-                        console.log(latlng);
                         if(status === 'OK')
                         {
-                            console.log(results[0]);
                             map.setCenter(results[0].geometry.location);
                             for(i = 0; i < results[0].address_components.length; i++)
                             {
+                                var marker;
                                 if(results[0].address_components[i].types.includes("administrative_area_level_1"))
                                 {
+                                    map.setZoom(14);
+                                    marker = new google.maps.Marker( {map: map, position: results[0].geometry.location });
                                     resolve(results[0].address_components[i].long_name);
                                     return;
                                 }
                                 else if(results[0].address_components[i].types.includes("locality"))
                                 {
+                                    map.setZoom(14);
+                                    marker = new google.maps.Marker( {map: map, position: results[0].geometry.location });
                                     resolve(results[0].address_components[i].long_name);
                                     return;
                                 }
                                 else if(results[0].address_components[i].types.includes("postal_town"))
                                 {
+                                    map.setZoom(14);
+                                    marker = new google.maps.Marker( {map: map, position: results[0].geometry.location});
                                     resolve(results[0].address_components[i].long_name);
                                     return;
                                 }
                             }
-                            //var marker = new google.maps.Marker( {//map: map, position: results[0].geometry.location });
+                            map.setZoom(14);
+                            marker = new google.maps.Marker( {map: map, position: results[0].geometry.location });
                             resolve("None");
                         }
                         else
@@ -144,17 +150,15 @@
                             if (status === "OK" && results) {
                                 // Retrieve the first result
                                 if (results[0]) {
-                                    const a = 12742; //km
-                                    const b = 12713; //km
+                                    const a = 6378; //km
+                                    const b = 6356; //km
                                     const xRad = x * Math.PI / 180;
-                                    const z = results[0].elevation;
-                                    console.log(results[0].elevation); //For debugging
+                                    const z = results[0].elevation / 1000;
 
                                     var exp1 = Math.pow(a,4) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 4) * Math.pow(Math.sin(xRad), 2);
                                     var exp2 = Math.pow(a,2) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 2) * Math.pow(Math.sin(xRad), 2);
                                     var exp3 = 2 * z * Math.sqrt(exp2);
 
-                                    console.log(Math.sqrt(exp1 / exp2 + exp3 + Math.pow(z,2)).toFixed(2));
                                     resolve(Math.sqrt(exp1 / exp2 + exp3 + Math.pow(z,2)).toFixed(2));
                                     return;
 
@@ -176,25 +180,25 @@
 
             const inCityCoords =  
             [ 
-                ["Ankara", 39.942, 32.643, 21696], //rakım, şehir merkezine uzaklık, distancetoEC eklenecek
-                ["İstanbul", 41.039, 28.978, 5479],
-                ["İzmir", 38.414, 27.149, 2689],
-                ["Adana", 37.026, 35.359, 7453],
-                ["New York", 40.695, -73.995, 3674],
-                ["London", 51.517, -0.136, 1868],
-                ["Berlin", 52.519, 13.409, 366],
-                ["Moskva", 55.760, 37.628, 4502],
-                ["Hong Kong", 22.287, 114.167, 7777],
-                ["Sydney", -33.869, 151.214, 1334]
+                ["Ankara", 39.942, 32.643, 21696, 6369 ], //rakım, şehir merkezine uzaklık, distancetoEC eklenecek
+                ["İstanbul", 41.039, 28.978, 5479, 6368],
+                ["İzmir", 38.414, 27.149, 2689, 6369],
+                ["Adana", 37.026, 35.359, 7453, 6370],
+                ["New York", 40.695, -73.995, 3674, 6368],
+                ["London", 51.517, -0.136, 1868, 6364],
+                ["Berlin", 52.519, 13.409, 366, 6364],
+                ["Moskva", 55.760, 37.628, 4502, 6363],
+                ["Hong Kong", 22.287, 114.167, 7777, 6374],
+                ["Sydney", -33.869, 151.214, 1334, 6371]
                 //Aynı şehirde farklı noktalar eklenebilir
             ];
 
             const outCityCoords = 
             [
-                ["North Atlantic Ocean", 33.953, -40.783, "None"],
-                ["Sahara Desert", 22.794, 14.988, "Bilma"],
-                ["Greenland", 65.874, -46.301, "Qeqqata Municipality"], 
-                ["Mount Everest", 27.988, 86.922, "Rikaze Shi"], 
+                ["North Atlantic Ocean", 33.953, -40.783, "None", 6367],
+                ["Sahara Desert", 22.794, 14.988, "Bilma", 6375],
+                ["Greenland", 65.874, -46.301, "Qeqqata Municipality", 6361],
+                ["Mount Everest", 27.988, 86.922, "Rikaze Shi", 6381],
             ];
 
             function sleep(milliseconds) 
@@ -283,7 +287,7 @@
                     try 
                     {
                         let distance = await getNearestCityCenterDistance([coord[1], coord[2]], coord[0]);
-                        console.assert(distance === coord[0],
+                        console.assert(distance === coord[3],
                         {
                             coord: coord.toString(),
                             distance: distance,
@@ -305,7 +309,7 @@
                     try 
                     {
                         let distance = await getNearestCityCenterDistance([coord[1], coord[2]], coord[3]);
-                        console.assert(distance === coord[0],
+                        console.assert(isNaN(distance),
                         {
                             coord: coord.toString(),
                             distance: distance,
@@ -323,35 +327,57 @@
 
             async function testGetEarthCenterDistance()
             {
-                inCityCoords.forEach(coord => 
+                let i = 0;
+                while(i < inCityCoords.length)
                 {
-                    let distance = getEarthCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance === coord[0],
+                    let coord = inCityCoords[i];
+                    try
                     {
-                        coord: coord.toString(),
-                        distance: distance,
-                        error: "InCityCoords getEarthCenterDistance(): incorrect distance"
-                    });
-                });
+                        let distance = await getEarthCenterDistance(coord[1], coord[2]);
+                        console.assert(Math.abs(distance - coord[4]) < 1,
+                            {
+                                coord: coord.toString(),
+                                distance: distance,
+                                error: "InCityCoords getEarthCenterDistance(): incorrect distance"
+                            });
+                    }
+                    catch (error)
+                    {
+                        console.log("InCityCoords getNearestCityCenterDistance(): " + error);
+                    }
+                    //sleep(2000);
+                    i++;
+                }
 
-                outCityCoords.forEach(coord => 
+                i = 0;
+                while(i < outCityCoords.length)
                 {
-                    let distance = getEarthCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance != coord[0],
+                    let coord = outCityCoords[i];
+                    try
                     {
-                        coord: coord.toString(),
-                        distance: distance,
-                        error: "OutCityCoords getEarthCenterDistance(): incorrect distance"
-                    });
-                });
+                        let distance = await getEarthCenterDistance(coord[1], coord[2]);
+                        console.assert(Math.abs(distance - coord[4]) < 1,
+                            {
+                                coord: coord.toString(),
+                                distance: distance,
+                                error: "OutCityCoords getEarthCenterDistance(): incorrect distance"
+                            });
+                    }
+                    catch (error)
+                    {
+                        console.log("OutCityCoords getNearestCityCenterDistance(): " + error);
+                    }
+                    //sleep(2000);
+                    i++;
+                }
             }
 
             async function unitTest()
             {
-                await testGetDeviceCoordinates();
-                await testGetCity();
-                await testGetNearestCityCenterDistance();
-                await testGetEarthCenterDistance();
+                //await testGetDeviceCoordinates();
+                //await testGetCity();
+                //await testGetNearestCityCenterDistance();
+                //await testGetEarthCenterDistance();
             }
 
         </script>
