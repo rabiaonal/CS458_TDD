@@ -15,40 +15,60 @@
         
             function initPage() 
             {
-                map = new google.maps.Map(document.getElementById("map"), 
+                map = new google.maps.Map(document.getElementById("map"),
                 {
-                    center: { lat: 39.942, lng: 32.643 },
-                    zoom: 10,
+                    center: new google.maps.LatLng(39.942, 32.643),
+                    zoom: 10
                 });
                 geocoder = new google.maps.Geocoder();
-                unitTest();
+                //unitTest();
             }
 
         </script>
     </head>
     <body>
-        <div id="CoordinateInput">
-            <form action="javascript:void(0);" onsubmit="getCity()">
-                <label for="xCoord">Latitude: </label>
-                <input class="coordInput" type="number" name="xCoord" pattern="[0-9]+([.,][0-9]+)?" required min="-90.0" max="90.0"><br>
-                <label for="yCoord">Longitude: </label>
-                <input class="coordInput" type="number" name="yCoord" pattern="[0-9]+([.,][0-9]+)?" required min="-180.0" max="180.0"><br>
-                <button type="submit">OK</button>
+        <p id="CoordinateInput">
+            <form action="javascript:void(0);">
+                <label id="xCoord">Latitude: </label>
+                <input class="coordInput" type="number" name="xCoord" id="xCoordIn" pattern="[0-9]+([.,][0-9]+)?" required min="-90.0" max="90.0"><br>
+                <label id="yCoord">Longitude: </label>
+                <input class="coordInput" type="number" name="yCoord" id="yCoordIn" pattern="[0-9]+([.,][0-9]+)?" required min="-180.0" max="180.0"><br>
+                <button type="submit" onclick="calculate()">OK</button>
             </form>
+            <button onclick="getFromGPS()">Get from GPS</button> <br>
+            <p id="city"></p>
+            <p id="distanceToCity"></p>
+            <p id="distanceToEarth"></p>
         </div>
         <div id="map"></div>
         <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAjZAFTWtoDNnapPo5LNv4ziRS8WjKPQM&callback=initPage&libraries=&v=weekly"></script>
         <script>
 
+            function getFromGPS() {
+                getDeviceCoordinates().then(coord => {
+                    document.getElementById("xCoordIn").value = coord[0].toFixed(6);
+                    document.getElementById("yCoordIn").value = coord[1].toFixed(6);
+                });
+            }
+
+            function calculate(){
+                var x = parseFloat(document.getElementById("xCoordIn").value);
+                var y = parseFloat(document.getElementById("yCoordIn").value);
+                getCity(x, y).then(city => {
+                    document.getElementById("city").innerText = "You are in " + city + ".";
+                    document.getElementById("distanceToEarth").innerText = "You are " + getEarthCenterDistance(x, 0) + " km away from the center of the earth.";
+                    getNearestCityCenterDistance(x, y).then( distance => {
+                        document.getElementById("distanceToCity").innerText = "You are" + distance + " km away from the city center.";
+                        getEarthCenterDistance(x, y);
+                    });
+                });
+            }
+
             //coord -> [float, float]
             //returns City
-            function getCity(coords)
+            function getCity(x, y)
             {
-                const latlng = 
-                {
-                    lat: coords[0],
-                    lng: coords[1],
-                };
+                const latlng = new google.maps.LatLng(x, y);
                    
                 let cityPromise = new Promise((resolve, reject) =>
                 {
@@ -91,7 +111,7 @@
                     }, 
                     (error) =>
                     {
-                        if (error.code == 1) alert("Allow to access your position.");
+                        if (error.code === 1) alert("Allow to access your position.");
                         else alert("Unfortunately, your position could not be determined.");
                         reject([NaN, NaN]);
                     });
@@ -100,26 +120,47 @@
 
             //coord -> [float, float]
             //returns float
-            function  getNearestCityCenterDistance(coord)
+            function  getNearestCityCenterDistance(x, y)
             {
-                return NaN;
+                var service = new google.maps.DistanceMatrixService();
+                return new Promise((resolve, reject) => {
+                    service.getDistanceMatrix(
+                        {
+                            origins: new google.maps.LatLng(x, y),
+                            destinations: document.getElementById("city").innerText,
+                            travelMode: google.maps.TravelMode.DRIVING,
+                            unitSystem: google.maps.UnitSystem.METRIC,
+                            avoidHighways: false,
+                            avoidTolls: false,
+                        }, function(response, status){
+                            if (status === "OK") {
+                                resolve(response);
+                            } else {
+                                reject(status);
+                            }
+                        }
+                    )
+                });
+
             }
 
             //coord -> [float, float]
             //returns float
             function getEarthCenterDistance(x, z)
             {
-                const a = 12742; //km
-                const b = 12713; //km
+                //z şu an 0 veriliyor aslında apidan alınacak
+                const a = 6378; //km
+                const b = 6356; //km
+                const xRad = x * Math.PI / 180;
 
-                var exp1 = a^4 * (Math.cos(x))^2 + b^4 * (Math.sin(x))^2;
-                var exp2 = a^2 * (Math.cos(x))^2 + b^2 * (Math.sin(x))^2;
+                var exp1 = Math.pow(a,4) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 4) * Math.pow(Math.sin(xRad), 2);
+                var exp2 = Math.pow(a,2) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 2) * Math.pow(Math.sin(xRad), 2);
                 var exp3 = 2 * z * Math.sqrt(exp2);
-                return exp1 / exp2 + exp3 + z^2;
+                return Math.sqrt(exp1 / exp2 + exp3 + Math.pow(z,2)).toFixed(2);
             }
 
         </script>
-        <script name="unitTests">
+        <script id="unitTests">
 
             const inCityCoords =  
             [ 
@@ -204,7 +245,7 @@
                 outCityCoords.forEach(coord => 
                 {
                     let distance = getNearestCityCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance != coord[0],
+                    console.assert(distance !== coord[0],
                     {
                         coord: coord.toString(),
                         distance: distance,
@@ -229,7 +270,7 @@
                 outCityCoords.forEach(coord => 
                 {
                     let distance = getEarthCenterDistance([coord[1], coord[2]]);
-                    console.assert(distance != coord[0],
+                    console.assert(distance !== coord[0],
                     {
                         coord: coord.toString(),
                         distance: distance,
