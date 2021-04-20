@@ -2,6 +2,28 @@
     <head>
         <script>
 
+            async function getFromGPS() {
+                getDeviceCoordinates().then(coord => {
+                    document.getElementById("xCoordIn").value = coord[0].toFixed(6);
+                    document.getElementById("yCoordIn").value = coord[1].toFixed(6);
+                });
+            }
+
+            async function calculate(){
+                var x = parseFloat(document.getElementById("xCoordIn").value);
+                var y = parseFloat(document.getElementById("yCoordIn").value);
+                getCity(x, y).then(city => {
+                    document.getElementById("city").innerText = "You are in " + city + ".";
+                    getNearestCityCenterDistance([x, y], city).then( d => {
+                        document.getElementById("distanceToCity").innerText = "You are " + (d/1000).toFixed(2) + " km away from the city center.";
+                        getEarthCenterDistance(x,0).then( distance => {
+                            document.getElementById("distanceToEarth").innerText = "You are " + distance + " km away from the center of the earth.";
+                        });
+                    });
+                });
+
+            }
+
             //coord -> [float, float]
             //returns City
             async function getCity(coords)
@@ -58,7 +80,6 @@
                 {
                     navigator.geolocation.getCurrentPosition((location) => 
                     {
-                        console.log(location);
                         resolve([location.coords.latitude, location.coords.longitude]);
                     }, 
                     (error) =>
@@ -88,12 +109,11 @@
                     },
                     (response, status) =>
                     {
-                        if (status === "OK") 
+                        if (status === "OK")
                         {
-                            console.log(response.rows[0].elements[0]);
                             if(response.rows[0].elements[0].status === "OK") resolve(response.rows[0].elements[0].distance.value);
                             else resolve(NaN);
-                        } 
+                        }
                         else
                         {
                             console.log('Distance Matrix Service failed: ' + status);
@@ -107,29 +127,31 @@
             //returns float
             async function getEarthCenterDistance(x, z)
             {
-                const a = 12742; //km
-                const b = 12713; //km
+                //z şu an 0 veriliyor aslında apidan alınacak
+                const a = 6378; //km
+                const b = 6356; //km
+                const xRad = x * Math.PI / 180;
 
-                var exp1 = a^4 * (Math.cos(x))^2 + b^4 * (Math.sin(x))^2;
-                var exp2 = a^2 * (Math.cos(x))^2 + b^2 * (Math.sin(x))^2;
+                var exp1 = Math.pow(a,4) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 4) * Math.pow(Math.sin(xRad), 2);
+                var exp2 = Math.pow(a,2) * Math.pow(Math.cos(xRad), 2) + Math.pow(b, 2) * Math.pow(Math.sin(xRad), 2);
                 var exp3 = 2 * z * Math.sqrt(exp2);
-                return exp1 / exp2 + exp3 + z^2;
+                return Math.sqrt(exp1 / exp2 + exp3 + Math.pow(z,2)).toFixed(2);
             }
 
         </script>
-        <script name="unitTests">
+        <script id="unitTests">
 
             const inCityCoords =  
             [ 
                 ["Ankara", 39.942, 32.643, 21696], //rakım, şehir merkezine uzaklık, distancetoEC eklenecek
-                ["İstanbul", 41.039, 28.978, 5479], 
-                ["İzmir", 38.414, 27.149, 2689], 
-                ["Adana", 37.026, 35.359, 7453], 
-                ["New York", 40.695, -73.995, 3674], 
-                ["London", 51.517, -0.136, 1868], 
-                ["Berlin", 52.519, 13.409, 366], 
-                ["Moskva", 55.760, 37.628, 4502], 
-                ["Hong Kong", 22.287, 114.167, 7777], 
+                ["İstanbul", 41.039, 28.978, 5479],
+                ["İzmir", 38.414, 27.149, 2689],
+                ["Adana", 37.026, 35.359, 7453],
+                ["New York", 40.695, -73.995, 3674],
+                ["London", 51.517, -0.136, 1868],
+                ["Berlin", 52.519, 13.409, 366],
+                ["Moskva", 55.760, 37.628, 4502],
+                ["Hong Kong", 22.287, 114.167, 7777],
                 ["Sydney", -33.869, 151.214, 1334]
                 //Aynı şehirde farklı noktalar eklenebilir
             ];
@@ -228,7 +250,7 @@
                     try 
                     {
                         let distance = await getNearestCityCenterDistance([coord[1], coord[2]], coord[0]);
-                        console.assert(distance === coord[3],
+                        console.assert(distance === coord[0],
                         {
                             coord: coord.toString(),
                             distance: distance,
@@ -250,7 +272,7 @@
                     try 
                     {
                         let distance = await getNearestCityCenterDistance([coord[1], coord[2]], coord[3]);
-                        console.assert(isNaN(distance),
+                        console.assert(distance === coord[0],
                         {
                             coord: coord.toString(),
                             distance: distance,
@@ -296,7 +318,7 @@
                 await testGetDeviceCoordinates();
                 await testGetCity();
                 await testGetNearestCityCenterDistance();
-                //await testGetEarthCenterDistance();
+                await testGetEarthCenterDistance();
             }
 
         </script>
@@ -312,10 +334,10 @@
 
             let map;
             let geocoder;
-        
-            async function initPage() 
+
+            async function initPage()
             {
-                map = new google.maps.Map(document.getElementById("map"), 
+                map = new google.maps.Map(document.getElementById("map"),
                 {
                     center: { lat: 39.942, lng: 32.643 },
                     zoom: 10,
@@ -328,14 +350,18 @@
         <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAjZAFTWtoDNnapPo5LNv4ziRS8WjKPQM&callback=initPage&libraries=&v=weekly"></script>
     </head>
     <body>
-        <div id="CoordinateInput">
-            <form action="javascript:void(0);" onsubmit="getCity()">
-                <label for="xCoord">Latitude: </label>
-                <input class="coordInput" type="number" name="xCoord" pattern="[0-9]+([.,][0-9]+)?" required min="-90.0" max="90.0"><br>
-                <label for="yCoord">Longitude: </label>
-                <input class="coordInput" type="number" name="yCoord" pattern="[0-9]+([.,][0-9]+)?" required min="-180.0" max="180.0"><br>
-                <button type="submit">OK</button>
+        <div id="CoordinateInput" style="padding: 10px">
+            <form action="javascript:void(0);">
+                <label id="xCoord">Latitude: </label>
+                <input class="coordInput" type="number" name="xCoord" id="xCoordIn" pattern="[0-9]+([.,][0-9]+)?" required min="-90.0" max="90.0"><br>
+                <label id="yCoord">Longitude: </label>
+                <input class="coordInput" type="number" name="yCoord" id="yCoordIn" pattern="[0-9]+([.,][0-9]+)?" required min="-180.0" max="180.0"><br>
+                <button type="submit" onclick="calculate()">OK</button>
             </form>
+            <button onclick="getFromGPS()">Get from GPS</button> <br>
+            <p id="city"></p>
+            <p id="distanceToCity"></p>
+            <p id="distanceToEarth"></p>
         </div>
         <div id="map"></div>
     </body>
